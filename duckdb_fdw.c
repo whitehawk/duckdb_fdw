@@ -594,7 +594,8 @@ sqliteGetForeignRelSize(PlannerInfo *root, RelOptInfo *baserel, Oid foreigntable
 													 fpinfo->local_conds,
 													 baserel->relid,
 													 JOIN_INNER,
-													 NULL);
+													 NULL,
+													 false);
 
 	cost_qual_eval(&fpinfo->local_conds_cost, fpinfo->local_conds, root);
 
@@ -3581,7 +3582,8 @@ sqliteGetForeignJoinPaths(PlannerInfo *root,
 													 fpinfo->local_conds,
 													 0,
 													 JOIN_INNER,
-													 NULL);
+													 NULL,
+													 false);
 	cost_qual_eval(&fpinfo->local_conds_cost, fpinfo->local_conds, root);
 
 	/*
@@ -3591,7 +3593,7 @@ sqliteGetForeignJoinPaths(PlannerInfo *root,
 	if (!fpinfo->use_remote_estimate)
 		fpinfo->joinclause_sel = clauselist_selectivity(root, fpinfo->joinclauses,
 														0, fpinfo->jointype,
-														extra->sjinfo);
+														extra->sjinfo, false);
 
 	/* Estimate costs for bare join relation */
 	sqlite_estimate_path_cost_size(root, joinrel, NIL, NIL, NULL,
@@ -4367,8 +4369,7 @@ sqlite_add_foreign_final_paths(PlannerInfo *root, RelOptInfo *input_rel,
 	 */
 	if (ifpinfo->local_conds)
 		return;
-
-#if PG_VERSION_NUM >= 130000
+#if PG_VERSION_NUM > 130000
 	/* Don't pushdown FETCH ... WITH TIES option */
 	if (parse->limitCount && parse->limitOption == LIMIT_OPTION_WITH_TIES)
 		return;
@@ -4540,7 +4541,8 @@ sqlite_estimate_path_cost_size(PlannerInfo *root,
 										   local_param_join_conds,
 										   foreignrel->relid,
 										   JOIN_INNER,
-										   NULL);
+										   NULL,
+										   false);
 		local_sel *= fpinfo->local_conds_sel;
 
 		rows = clamp_row_est(rows * local_sel);
@@ -4777,7 +4779,8 @@ sqlite_estimate_path_cost_size(PlannerInfo *root,
 														 fpinfo->remote_conds,
 														 0,
 														 JOIN_INNER,
-														 NULL));
+														 NULL,
+														 false));
 
 				/*
 				 * Factor in the selectivity of the locally-checked quals
